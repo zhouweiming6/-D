@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>单人俄罗斯转盘 - 纯HTML/JS</title>
+  <style>
+    :root{
+      --bg:#0b1020;--panel:#121a33;--accent:#6ee7ff;--accent2:#a78bfa;--good:#22c55e;--bad:#ef4444;--text:#e5e7eb;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:radial-gradient(1200px 800px at 20% 10%,#142042 0%,#0b1020 55%,#060913 100%);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"PingFang SC","Hiragino Sans GB","Noto Sans CJK SC","Microsoft Yahei",sans-serif;color:var(--text);display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px}
+    .app{width:min(920px,94vw);}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);backdrop-filter: blur(6px);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:24px;}
+    h1{margin:0 0 12px;font-size:clamp(22px,3.4vw,32px);letter-spacing:.5px}
+    .sub{opacity:.8;margin-bottom:18px}
+    .row{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+    .controls{display:flex;gap:12px;flex-wrap:wrap}
+    button{appearance:none;border:1px solid rgba(255,255,255,.14);background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));color:var(--text);padding:12px 16px;border-radius:14px;font-weight:600;cursor:pointer;transition:.18s transform ease,.18s opacity ease, .18s box-shadow ease;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+    button:hover{transform:translateY(-2px)}
+    button:active{transform:translateY(0)}
+    button.primary{border-color:rgba(110,231,255,.5);box-shadow:0 8px 24px rgba(110,231,255,.25)}
+    button.danger{border-color:rgba(239,68,68,.5);box-shadow:0 8px 24px rgba(239,68,68,.25)}
+    .toggle{display:flex;align-items:center;gap:10px;user-select:none}
+    .toggle input{width:44px;height:24px;appearance:none;background:#26304f;border-radius:16px;position:relative;outline:none;cursor:pointer;border:1px solid rgba(255,255,255,.14)}
+    .toggle input::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:white;transition:.2s}
+    .toggle input:checked{background:#2b885c}
+    .toggle input:checked::after{transform:translateX(20px)}
+
+    .board{display:grid;grid-template-columns: 1fr 1fr;gap:20px;margin-top:18px}
+    @media (max-width:760px){.board{grid-template-columns: 1fr}}
+
+    .cylinder{display:grid;place-items:center;aspect-ratio:1;background:radial-gradient(120px 120px at 50% 50%, #1a2447 0, #16203f 70%, #0e1530 100%);border-radius:20px;border:1px solid rgba(255,255,255,.08);position:relative;overflow:hidden}
+    .cylinder .ring{position:relative;width:min(78%,420px);aspect-ratio:1;border-radius:50%;border:12px solid rgba(255,255,255,.05);box-shadow:inset 0 0 40px rgba(0,0,0,.45)}
+    .chamber{position:absolute;width:18%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:radial-gradient(ellipse at 40% 35%,#223058,#1a2340);border:2px solid rgba(255,255,255,.12);transition:.18s transform ease,.18s box-shadow ease}
+    .chamber.active{box-shadow:0 0 0 3px rgba(167,139,250,.5), 0 0 0 8px rgba(167,139,250,.12);transform:scale(1.03)}
+    .chamber .dot{width:30%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.22)}
+    .center-pin{position:absolute;width:12%;aspect-ratio:1;border-radius:50%;background:radial-gradient(#9ca3af,#4b5563);box-shadow:0 2px 10px rgba(0,0,0,.5)}
+
+    .panel{background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:16px}
+    .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px}
+    .stat{padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:14px}
+    .stat b{display:block;font-size:14px;opacity:.8}
+    .stat .v{font-size:22px;font-weight:800;margin-top:4px}
+
+    .log{height:200px;overflow:auto;border-radius:12px;background:rgba(0,0,0,.25);padding:10px;border:1px solid rgba(255,255,255,.08);font-family:ui-monospace,Consolas,monospace}
+    .log p{margin:.2em 0}
+
+    .banner{margin-top:12px;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.12)}
+    .banner.ok{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35)}
+    .banner.warn{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.35)}
+
+    .prob{font-weight:700}
+    .foot{opacity:.7;margin-top:10px;font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="card">
+      <h1>单人俄罗斯转盘 <span style="font-size:.7em;opacity:.7">(6发膛室·纯前端)</span></h1>
+      <div class="row" style="justify-content:space-between">
+        <div class="controls">
+          <button id="spin" class="primary">🎲 旋转弹巢</button>
+          <button id="fire" class="danger">🔫 扣扳机</button>
+          <button id="reset">♻️ 重置</button>
+        </div>
+        <label class="toggle" title="每次射击前是否自动重新旋转弹巢 (独立概率)">
+          <input id="spinEvery" type="checkbox"/>
+          <span>每次射击都旋转</span>
+        </label>
+      </div>
+
+      <div class="board">
+        <div class="cylinder">
+          <div class="ring" id="ring">
+            <!-- Chambers will be injected by JS -->
+            <div class="center-pin"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div id="status" class="banner ok">✅ 就绪：点击「旋转弹巢」或直接「扣扳机」。</div>
+          <div class="stats">
+            <div class="stat"><b>当前概率</b><div class="v"><span id="prob" class="prob">—</span></div></div>
+            <div class="stat"><b>剩余安全膛室</b><div class="v" id="safeLeft">—</div></div>
+            <div class="stat"><b>存活回合</b><div class="v" id="rounds">0</div></div>
+            <div class="stat"><b>最佳纪录</b><div class="v" id="best">0</div></div>
+          </div>
+          <div class="banner foot">说明：初始将 1 发子弹随机放入 6 个膛室之一。若不勾选“每次射击都旋转”，则每次扣扳机都会顺时针前进到下一个膛室，概率会随剩余空仓变化。</div>
+          <div class="log" id="log" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const N = 6; // 膛室数
+    const ring = document.getElementById('ring');
+    const logEl = document.getElementById('log');
+    const status = document.getElementById('status');
+    const probEl = document.getElementById('prob');
+    const safeLeftEl = document.getElementById('safeLeft');
+    const roundsEl = document.getElementById('rounds');
+    const bestEl = document.getElementById('best');
+
+    let bulletIndex = 0; // 有弹膛室索引
+    let pointer = 0; // 当前对准的膛室索引（扳机对准位置）
+    let rounds = 0;
+    let best = 0;
+    let ended = false;
+
+    // 创建 6 个膛室并排布到圆环上
+    const chambers = [];
+    for(let i=0;i<N;i++){
+      const c = document.createElement('div');
+      c.className = 'chamber';
+      const angle = (i / N) * Math.PI * 2 - Math.PI/2; // 从顶部开始
+      const R = 40; // 百分比半径
+      c.style.left = (50 + R * Math.cos(angle)) + '%';
+      c.style.top  = (50 + R * Math.sin(angle)) + '%';
+      c.style.transform = 'translate(-50%,-50%)';
+      const d = document.createElement('div');
+      d.className='dot';
+      c.appendChild(d);
+      ring.appendChild(c);
+      chambers.push(c);
+    }
+
+    function log(msg){
+      const p=document.createElement('p');
+      p.textContent=msg;
+      logEl.appendChild(p);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function rng(n){return Math.floor(Math.random()*n)}
+
+    function spinCylinder(){
+      pointer = rng(N); // 指向任意膛室
+      status.className = 'banner ok';
+      status.textContent = '🔄 已旋转弹巢：当前指向膛室 #' + (pointer+1);
+      highlight();
+      updateProb();
+      log('🎲 旋转到 #' + (pointer+1));
+    }
+
+    function loadBullet(){
+      bulletIndex = rng(N);
+    }
+
+    function reset(all=true){
+      ended = false;
+      rounds = 0;
+      loadBullet();
+      spinCylinder();
+      roundsEl.textContent=rounds;
+      safeLeftEl.textContent = N-1; // 初始安全膛室（未知，但对“每次旋转关”模式是 N-1 逻辑起点）
+      log('— — — 新游戏开始 — — —');
+    }
+
+    function highlight(){
+      chambers.forEach((c,i)=>c.classList.toggle('active', i===pointer));
+    }
+
+    function updateProb(){
+      const spinEvery = document.getElementById('spinEvery').checked;
+      let p;
+      if(spinEvery){
+        p = 1/N; // 每次独立
+        safeLeftEl.textContent = '—';
+      }else{
+        // 计算剩余安全膛室：我们只在越过子弹前才会失败
+        // 假设尚未死亡且指针不重置，每次 Fire 指针+1
+        // 已经经历了 rounds 次安全触发 => 剩余安全 = (N-1) - rounds
+        const safeLeft = Math.max(0, (N-1) - rounds);
+        safeLeftEl.textContent = safeLeft;
+        p = 1 / (safeLeft + 1); // 下次触发命中的条件概率
+      }
+      probEl.textContent = (p*100).toFixed(1) + '%';
+    }
+
+    function endGame(){
+      ended = true;
+      status.className = 'banner warn';
+      status.textContent = '💥 BANG! 游戏结束。点击“重置”再来一局。';
+    }
+
+    function fire(){
+      if(ended){return}
+      const spinEvery = document.getElementById('spinEvery').checked;
+      if(spinEvery){
+        // 每次射击前随机指向
+        pointer = rng(N);
+      }
+      highlight();
+
+      const hit = pointer === bulletIndex;
+      if(hit){
+        log('💥 扣扳机 -> 命中子弹！');
+        endGame();
+      }else{
+        log('✅ 扣扳机 -> 空仓（安全）');
+        rounds++;
+        roundsEl.textContent = rounds;
+        best = Math.max(best, rounds);
+        bestEl.textContent = best;
+        status.className = 'banner ok';
+        status.textContent = '✅ 安全！继续还是见好就收？';
+        // 指针前进到下一个膛室（真实转轮手枪行为）
+        pointer = (pointer + 1) % N;
+        // 概率更新（非每次旋转模式下会逐步升高）
+        updateProb();
+        highlight();
+      }
+    }
+
+    // 初始
+    document.getElementById('spin').addEventListener('click', ()=>{spinCylinder()});
+    document.getElementById('fire').addEventListener('click', ()=>{fire()});
+    document.getElementById('reset').addEventListener('click', ()=>{reset()});
+    document.getElementById('spinEvery').addEventListener('change', updateProb);
+
+    reset();
+  </script>
+</body>
+</html>
