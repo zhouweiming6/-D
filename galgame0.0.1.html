@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>夜里 · 显示器</title>
+<style>
+  body {
+    margin: 0;
+    background: #000;
+    font-family: "Microsoft YaHei", sans-serif;
+  }
+
+  #game {
+    width: 800px;
+    height: 450px;
+    margin: 40px auto;
+    position: relative;
+    background: radial-gradient(#111, #000);
+    overflow: hidden;
+  }
+
+  #screenGlow {
+    position: absolute;
+    inset: 0;
+    background: rgba(120,180,255,0.08);
+    pointer-events: none;
+  }
+
+  #textbox {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: rgba(0,0,0,0.65);
+    color: #eaeaea;
+    padding: 14px 18px;
+    box-sizing: border-box;
+  }
+
+  #name {
+    font-size: 14px;
+    opacity: 0.7;
+    margin-bottom: 6px;
+  }
+
+  #text {
+    min-height: 60px;
+    line-height: 1.6;
+    font-size: 16px;
+  }
+
+  #next {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 18px;
+    cursor: pointer;
+  }
+
+  #choices {
+    margin-top: 10px;
+  }
+
+  .choice {
+    display: block;
+    margin-top: 6px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #eee;
+    padding: 6px 10px;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .choice:hover {
+    background: rgba(255,255,255,0.18);
+  }
+</style>
+</head>
+<body>
+
+<div id="game">
+  <div id="screenGlow"></div>
+
+  <div id="textbox">
+    <div id="name">她</div>
+    <div id="text"></div>
+    <button id="next">▶</button>
+    <div id="choices"></div>
+  </div>
+</div>
+
+<script>
+let typeSpeed = 35; // A线 45，B线 25
+let typing = false;
+let typingTimer = null;
+let fullText = "";
+let charIndex = 0;
+
+/* ========= 剧情数据 ========= */
+const script = [
+  { text: "夜里。房间很暗，显示器待机。" },
+  { speaker: "她", text: "……还没睡？" },
+  { speaker: "她", text: "灯不用开。" },
+  { speaker: "她", text: "我待一会儿就走。" },
+  { speaker: "她", text: "你刚才在看这个？" },
+  { speaker: "她", text: "字太小了。" },
+  { speaker: "她", text: "算了。" },
+  { speaker: "她", text: "别关屏幕。" },
+  { speaker: "她", text: "我想确认一件事。" },
+  { speaker: "她", text: "你是不是——" },
+  { speaker: "她", text: "算了，不重要。" },
+
+  {
+    choice: [
+      { text: "不动", jump: "A1" },
+      { text: "抬头看她", jump: "B1" }
+    ]
+  }
+];
+
+function showLine(line) {
+  clearInterval(typingTimer);
+
+  nameBox.textContent = line.speaker || "";
+  textBox.textContent = "";
+
+  if (!line.text) return;
+
+  fullText = line.text;
+  charIndex = 0;
+  typing = true;
+
+  typingTimer = setInterval(() => {
+    charIndex++;
+    textBox.textContent = fullText.slice(0, charIndex);
+
+    if (charIndex >= fullText.length) {
+      clearInterval(typingTimer);
+      typing = false;
+    }
+  }, 35); // 数值越大，越“沉”
+}
+
+
+/* ========= 分支 ========= */
+const branches = {
+  A1: [
+    { speaker: "她", text: "你果然不太会回应。" },
+    { speaker: "她", text: "……不过这样也好。" },
+    { speaker: "她", text: "至少画面不会乱。" },
+    { speaker: "她", text: "我会留下。" }
+  ],
+
+  B1: [
+    { text: "你看到她已经坐下了。" },
+    { text: "她没有回避你的视线。" },
+    { speaker: "她", text: "嗯。" },
+    { speaker: "她", text: "你在看我。" },
+    { speaker: "她", text: "那就当我们扯平了。" },
+    { speaker: "她", text: "我会留下。" }
+  ]
+};
+
+/* ========= 引擎 ========= */
+let index = 0;
+let current = script;
+
+const nameBox = document.getElementById("name");
+const textBox = document.getElementById("text");
+const nextBtn = document.getElementById("next");
+const choicesBox = document.getElementById("choices");
+
+// function showLine(line) {
+//   nameBox.textContent = line.speaker || "";
+//   textBox.textContent = line.text || "";
+// }
+
+function showChoices(choices) {
+  nextBtn.style.display = "none";
+  choicesBox.innerHTML = "";
+  choices.forEach(c => {
+    const btn = document.createElement("button");
+    btn.className = "choice";
+    btn.textContent = c.text;
+    btn.onclick = () => {
+      choicesBox.innerHTML = "";
+      nextBtn.style.display = "block";
+      current = branches[c.jump];
+      index = 0;
+      showLine(current[index]);
+    };
+    choicesBox.appendChild(btn);
+  });
+}
+
+nextBtn.onclick = () => {
+  // 如果正在打字：直接显示完整句
+  if (typing) {
+    clearInterval(typingTimer);
+    textBox.textContent = fullText;
+    typing = false;
+    return;
+  }
+
+  index++;
+  if (index >= current.length) return;
+
+  const line = current[index];
+
+  if (line.choice) {
+    showChoices(line.choice);
+  } else {
+    showLine(line);
+  }
+};
+
+
+/* 初始显示 */
+showLine(script[0]);
+</script>
+
+</body>
+</html>
