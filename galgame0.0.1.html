@@ -1,4 +1,16 @@
 <!DOCTYPE html>
+<!-- 场景
+傍晚 / 自习室
+环境音：低、稳定、无情绪暗示
+
+你只是坐着，她只是也在这里。
+
+【画面】
+
+她坐在你旁边隔了一个位置。
+翻书的声音。
+一段安静。
+ -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -101,22 +113,13 @@ let charIndex = 0;
 
 /* ========= 剧情数据 ========= */
 const script = [
-  { text: "夜里。房间很暗，显示器待机。" },
-  { speaker: "她", text: "……还没睡？" },
-  { speaker: "她", text: "灯不用开。" },
-  { speaker: "她", text: "我待一会儿就走。" },
-  { speaker: "她", text: "你刚才在看这个？" },
-  { speaker: "她", text: "字太小了。" },
-  { speaker: "她", text: "算了。" },
-  { speaker: "她", text: "别关屏幕。" },
-  { speaker: "她", text: "我想确认一件事。" },
-  { speaker: "她", text: "你是不是——" },
-  { speaker: "她", text: "算了，不重要。" },
-
+  { text: "在自习室里，翻书的声音十分清脆。她走到了你旁边隔了一个位置。" },
+  { speaker: "她", text: "……这里，还有空位吗？" },
+  { speaker: "她", text: "如果不方便的话，我可以换个地方。" },
   {
     choice: [
-      { text: "不动", jump: "A1" },
-      { text: "抬头看她", jump: "B1" }
+      { text: "可以。", jump: "A1" },
+      { text: "行", jump: "A1" }
     ]
   }
 ];
@@ -148,22 +151,64 @@ function showLine(line) {
 /* ========= 分支 ========= */
 const branches = {
   A1: [
-    { speaker: "她", text: "你果然不太会回应。" },
-    { speaker: "她", text: "……不过这样也好。" },
-    { speaker: "她", text: "至少画面不会乱。" },
-    { speaker: "她", text: "我会留下。" }
+    { speaker: "她", text: "……" },
+    { speaker: "她", text: "谢谢。" },
+
+    { text: "她坐下后，把包放到一旁，翻开了书。" },
+
+    { text: "自习室里还有零散的几个人，各自低头做着自己的事。" },
+
+    { text: "她翻着书，偶尔停一下，又继续往下看。" },
+
+    { speaker: "她", text: "……" },
+
+    { speaker: "她", text: "这里比我想象中安静。" },
+
+    { text: "书页翻动的声音在安静的空间里显得很清楚。" },
+
+    { text: "不知道过了多久。" },
+
+    { text: "你回过神来时，周围的人好像空了一点。" },
+
+    { speaker: "她", text: "……咦。" },
+
+    { speaker: "她", text: "刚才，这里是不是还有人？" },
+
+
+    { choice: [
+      { text: "好像有。", jump: "A2" },
+      { text: "没注意。", jump: "A2" }
+    ]}
   ],
 
-  B1: [
-    { text: "你看到她已经坐下了。" },
-    { text: "她没有回避你的视线。" },
-    { speaker: "她", text: "嗯。" },
-    { speaker: "她", text: "你在看我。" },
-    { speaker: "她", text: "那就当我们扯平了。" },
-    { speaker: "她", text: "我会留下。" }
-  ]
-};
+    A2: [
+      { speaker: "她", text: "是吗。" },
 
+      { speaker: "她", text: "……可能是我记错了。" },
+
+      { text: "她低下头，继续看书。" },
+
+      { text: "又过了一会儿。" },
+
+      { text: "自习室里只剩下你们2人。" },
+
+      { text: "她翻了一页书。" },
+
+      { text: "环境音变得很轻。" },
+
+      { text: "这一段时间，没有人再进来。" },
+
+// 后面某一章，她会说：
+
+// 「你那天不是也觉得很安静吗？」
+
+// 玩家回忆这段时会发现：
+// 自己从没说过。
+    ]
+    
+
+
+};
 /* ========= 引擎 ========= */
 let index = 0;
 let current = script;
@@ -224,3 +269,4 @@ showLine(script[0]);
 
 </body>
 </html>
+https://chatgpt.com/gg/v/6975aecdb0008191adc0611998b2f44b?token=MMZxT8wuPc6-cAKE4txZtQ
