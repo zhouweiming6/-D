@@ -15,6 +15,7 @@
 <head>
 <meta charset="UTF-8">
 <title>夜里 · 显示器</title>
+
 <style>
   body {
     margin: 0;
@@ -36,6 +37,7 @@
     inset: 0;
     background: rgba(120,180,255,0.08);
     pointer-events: none;
+     z-index: 1;
   }
 
   #textbox {
@@ -46,6 +48,7 @@
     color: #eaeaea;
     padding: 14px 18px;
     box-sizing: border-box;
+     z-index: 2;
   }
 
   #name {
@@ -89,6 +92,33 @@
   .choice:hover {
     background: rgba(255,255,255,0.18);
   }
+
+
+#characters {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;          /* 👈 比文字高 */  
+}
+
+#heroine {
+  position: absolute;
+  right: 40px;
+  bottom: -10px;       /* 让她“压”进文字框 */
+  height: 380px;
+  opacity: 0;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  transform: translateY(12px);
+
+}
+
+/* 显示状态 */
+#heroine.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
 </style>
 </head>
 <body>
@@ -102,9 +132,35 @@
     <button id="next">▶</button>
     <div id="choices"></div>
   </div>
+
+  <!-- 👇 角色层必须在 game 里 -->
+  <div id="characters">
+    <img id="heroine" src="file:///C:/Users/zhouw/Downloads/ChatGPT%20Image%202026%E5%B9%B42%E6%9C%889%E6%97%A5%2002_00_47.png">
+  </div>
 </div>
 
+
+
 <script>
+
+// 屏幕微光效果
+  document.getElementById("screenGlow").style.opacity = 0.04;
+
+// 角色显示控制
+const heroine = document.getElementById("heroine");
+
+// 显示角色
+function showHeroine(src) {
+  if (src) heroine.src = src;
+  heroine.classList.add("show");
+}
+
+// 隐藏角色
+function hideHeroine() {
+  heroine.classList.remove("show");
+}
+
+// 打字机效果
 let typeSpeed = 35; // A线 45，B线 25
 let typing = false;
 let typingTimer = null;
@@ -114,7 +170,10 @@ let charIndex = 0;
 /* ========= 剧情数据 ========= */
 const script = [
   { text: "在自习室里，翻书的声音十分清脆。她走到了你旁边隔了一个位置。" },
-  { speaker: "她", text: "……这里，还有空位吗？" },
+  { 
+    speaker: "她", text: "……这里，还有空位吗？" ,
+    show:"file:///C:/Users/zhouw/Downloads/ChatGPT%20Image%202026%E5%B9%B42%E6%9C%889%E6%97%A5%2002_00_47.png"
+  },
   { speaker: "她", text: "如果不方便的话，我可以换个地方。" },
   {
     choice: [
@@ -124,9 +183,19 @@ const script = [
   }
 ];
 
+
+//shｏｗ(); // 初始显示角色
 function showLine(line) {
   clearInterval(typingTimer);
 
+  if (line.show) showHeroine(line.show);
+  if (line.hide) hideHeroine();
+  if (line.show || line.hide) {
+  nextBtn.style.display = "none";
+  setTimeout(() => nextBtn.style.display = "block", 300);
+}
+
+// 打字机效果
   nameBox.textContent = line.speaker || "";
   textBox.textContent = "";
 
@@ -144,8 +213,9 @@ function showLine(line) {
       clearInterval(typingTimer);
       typing = false;
     }
-  }, 35); // 数值越大，越“沉”
+  }, typeSpeed);
 }
+
 
 
 /* ========= 分支 ========= */
@@ -154,23 +224,38 @@ const branches = {
     { speaker: "她", text: "……" },
     { speaker: "她", text: "谢谢。" },
 
-    { text: "她坐下后，把包放到一旁，翻开了书。" },
+    //hide 角色
+    { 
+      text: "她坐下后，把包放到一旁，翻开了书。",
+      hide: true
+     },
 
     { text: "自习室里还有零散的几个人，各自低头做着自己的事。" },
 
     { text: "她翻着书，偶尔停一下，又继续往下看。" },
 
-    { speaker: "她", text: "……" },
+    //showc 角色
+    { 
+      speaker: "她", 
+      show: "file:///C:/Users/zhouw/Downloads/ChatGPT%20Image%202026%E5%B9%B42%E6%9C%889%E6%97%A5%2002_00_47.png",
+      text: "……" 
+    },
 
     { speaker: "她", text: "这里比我想象中安静。" },
 
-    { text: "书页翻动的声音在安静的空间里显得很清楚。" },
+    //hide 角色
+    { 
+      text: "书页翻动的声音在安静的空间里显得很清楚。" 
+      , hide: true},
 
     { text: "不知道过了多久。" },
 
     { text: "你回过神来时，周围的人好像空了一点。" },
 
-    { speaker: "她", text: "……咦。" },
+    { 
+      speaker: "她", text: "……咦。",
+      show: "file:///C:/Users/zhouw/Downloads/ChatGPT%20Image%202026%E5%B9%B42%E6%9C%889%E6%97%A5%2002_00_47.png"
+     },
 
     { speaker: "她", text: "刚才，这里是不是还有人？" },
 
@@ -186,7 +271,9 @@ const branches = {
 
       { speaker: "她", text: "……可能是我记错了。" },
 
-      { text: "她低下头，继续看书。" },
+      { text: "她低下头，继续看书。" 
+      , hide: true 
+      },
 
       { text: "又过了一会儿。" },
 
@@ -223,6 +310,7 @@ const choicesBox = document.getElementById("choices");
 //   textBox.textContent = line.text || "";
 // }
 
+// 显示选项
 function showChoices(choices) {
   nextBtn.style.display = "none";
   choicesBox.innerHTML = "";
@@ -241,6 +329,7 @@ function showChoices(choices) {
   });
 }
 
+// 下一句按钮
 nextBtn.onclick = () => {
   // 如果正在打字：直接显示完整句
   if (typing) {
@@ -266,6 +355,7 @@ nextBtn.onclick = () => {
 /* 初始显示 */
 showLine(script[0]);
 </script>
+
 
 </body>
 </html>
