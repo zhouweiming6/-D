@@ -135,7 +135,7 @@
 
   <!-- 👇 角色层必须在 game 里 -->
   <div id="characters">
-    <img id="heroine" src="file:///C:/Users/zhouw/Downloads/ChatGPT%20Image%202026%E5%B9%B42%E6%9C%889%E6%97%A5%2002_00_47.png">
+    <img id="heroine" src="file:///C:/Users/zhouw/Downloads/0ec11eab-702e-4bc6-b47a-d49dd29729d3.png">
   </div>
 </div>
 
@@ -170,15 +170,16 @@ let charIndex = 0;
 /* ========= 剧情数据 ========= */
 const script = [
   { text: "在自习室里，翻书的声音十分清脆。她走到了你旁边隔了一个位置。" },
+  // {show:"file:///C:/Users/zhouw/Downloads/0ec11eab-702e-4bc6-b47a-d49dd29729d3.png"},
   { 
     speaker: "她", text: "……这里，还有空位吗？" ,
-    show:"file:///C:/Users/zhouw/Downloads/ChatGPT%20Image%202026%E5%B9%B42%E6%9C%889%E6%97%A5%2002_00_47.png"
+    show:"file:///C:/Users/zhouw/Downloads/0ec11eab-702e-4bc6-b47a-d49dd29729d3.png"
   },
   { speaker: "她", text: "如果不方便的话，我可以换个地方。" },
   {
     choice: [
-      { text: "可以。", jump: "A1" },
-      { text: "行", jump: "A1" }
+      { text: "没事，你坐吧。", jump: "A1" },
+      { text: "（点点头）", jump: "A1" }
     ]
   }
 ];
@@ -237,7 +238,7 @@ const branches = {
     //showc 角色
     { 
       speaker: "她", 
-      show: "file:///C:/Users/zhouw/Downloads/ChatGPT%20Image%202026%E5%B9%B42%E6%9C%889%E6%97%A5%2002_00_47.png",
+      show: "file:///C:/Users/zhouw/Downloads/0ec11eab-702e-4bc6-b47a-d49dd29729d3.png",
       text: "……" 
     },
 
@@ -254,7 +255,7 @@ const branches = {
 
     { 
       speaker: "她", text: "……咦。",
-      show: "file:///C:/Users/zhouw/Downloads/ChatGPT%20Image%202026%E5%B9%B42%E6%9C%889%E6%97%A5%2002_00_47.png"
+      show: "file:///C:/Users/zhouw/Downloads/0ec11eab-702e-4bc6-b47a-d49dd29729d3.png",
      },
 
     { speaker: "她", text: "刚才，这里是不是还有人？" },
@@ -271,9 +272,7 @@ const branches = {
 
       { speaker: "她", text: "……可能是我记错了。" },
 
-      { text: "她低下头，继续看书。" 
-      , hide: true 
-      },
+      { text: "她低下头，继续看书。" },
 
       { text: "又过了一会儿。" },
 
