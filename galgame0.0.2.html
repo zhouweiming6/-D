@@ -115,7 +115,107 @@
 /* 显示状态 */
 #heroine.show {
   opacity: 1;
-  transform: translateY(0);
+  animation: breathe 4s ease-in-out infinite;
+}
+
+
+/* 呼吸微抖动 */
+@keyframes breathe {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
+  100% { transform: translateY(0px); }
+}
+
+/* 说话时的微动效果 */
+#heroine.talk {
+  filter: brightness(1.05);
+  /* transform: translateY(0) scale(1.01); */
+}
+
+/* 屏幕微光效果 */
+@keyframes glowPulse {
+  0% { opacity: 0.03; }
+  50% { opacity: 0.06; }
+  100% { opacity: 0.03; }
+}
+
+#screenGlow {
+  animation: glowPulse 8s ease-in-out infinite;
+}
+
+/* AUTO按钮 */
+#auto {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #aaa;
+
+  font-size: 13px;
+  padding: 4px 10px;
+  cursor: pointer;
+
+  z-index: 10;   /* 一定要高于角色层 */
+}
+
+#auto:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,0.35);
+}
+
+
+@keyframes autoBlink {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+/* 对话历史记录 */
+#logBtn {
+  position: absolute;
+  top: 12px;
+  right: 70px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
+  cursor: pointer;
+  z-index: 10;
+}
+
+#logBtn:hover {
+  color: #fff;
+}
+
+#logPanel {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  color: #ddd;
+  padding: 30px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  display: none;
+  z-index: 20;
+}
+
+#logContent {
+  max-width: 680px;
+  margin: 0 auto;
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+.logLine {
+  margin-bottom: 12px;
+  opacity: 0.85;
+}
+
+.logName {
+  opacity: 0.6;
+  font-size: 13px;
 }
 
 
@@ -123,25 +223,37 @@
 </head>
 <body>
 
+
+  
 <div id="game">
   <div id="screenGlow"></div>
+  <!--  -- AUTO按钮 -->
+  <button id="auto">AUTO</button>
+  <!-- 对话历史记录 -->
+  <button id="logBtn">LOG</button>
+
+  <div id="logPanel">
+    <div id="logContent"></div>
+  </div>
 
   <div id="textbox">
     <div id="name">她</div>
     <div id="text"></div>
     <button id="next">▶</button>
     <div id="choices"></div>
+  
   </div>
 
   <!-- 👇 角色层必须在 game 里 -->
   <div id="characters">
-    <img id="heroine" src="file:///C:/Users/zhouw/Downloads/0ec11eab-702e-4bc6-b47a-d49dd29729d3.png">
+    <img id="heroine" src="file:///C:/Users/zhouw/Downloads/games/%E6%97%AE%E6%97%AFgame/%E5%A5%B3%E4%B8%BB%E6%AD%A3%E5%B8%B8%E5%9D%90%E5%A7%BF.png">
   </div>
 </div>
 
-
-
 <script>
+
+// 对话历史记录
+let historyLog = [];
 
 // 屏幕微光效果
   document.getElementById("screenGlow").style.opacity = 0.04;
@@ -167,13 +279,115 @@ let typingTimer = null;
 let fullText = "";
 let charIndex = 0;
 
+//AUTO对话功能
+let autoMode = false;
+let autoTimer = null;
+
+
+const autoBtn = document.getElementById("auto");
+
+autoBtn.onclick = () => {
+  autoMode = !autoMode;
+
+  autoBtn.style.color = autoMode ? "#fff" : "#888";
+  autoBtn.style.animation = autoMode ? "autoBlink 2s infinite" : "none";
+
+  if (autoMode && !typing) {
+    scheduleAuto();
+  } else {
+    clearTimeout(autoTimer);
+  }
+};
+
+// 历史记录功能
+const logBtn = document.getElementById("logBtn");
+const logPanel = document.getElementById("logPanel");
+const logContent = document.getElementById("logContent");
+
+// 打开/关闭历史记录面板
+logBtn.onclick = () => {
+
+  // 进入历史记录时，先退出AUTO模式
+  autoMode = false;
+  clearTimeout(autoTimer);
+  autoBtn.style.color = "#888";
+  autoBtn.style.animation = "none";
+
+
+  if (logPanel.style.display === "block") {
+    logPanel.style.display = "none";
+    return;
+  }
+
+  logContent.innerHTML = "";
+
+  historyLog.forEach(entry => {
+    const div = document.createElement("div");
+    div.className = "logLine";
+
+    // 如果有说话者，显示说话者名字
+    div.innerHTML = `
+      <div class="logName">${entry.speaker}</div>
+      <div>${entry.text}</div>
+    `;
+
+    logContent.appendChild(div);
+  });
+
+  // 显示历史记录面板
+  logPanel.style.display = "block";
+
+  logPanel.scrollTop = logPanel.scrollHeight; // 滚动到底部
+};
+// 关闭历史记录面板
+function closeLog() {
+  logPanel.style.display = "none";
+  nextBtn.focus();
+}
+
+logPanel.addEventListener("click", (e) => {
+  if (e.target === logPanel) {
+    closeLog();
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && logPanel.style.display === "block") {
+    closeLog();
+  }
+});
+
+
+function scheduleAuto() {
+  if (!autoMode) return;
+  if (typing) return;
+
+  const base = 800;// 每句基础停顿时间
+  const perChar = 60;// 每个字增加的停顿时间
+
+  let extra = 0;// 根据标点增加额外停顿
+  if (fullText.includes("…")) extra += 600;
+  if (fullText.includes("？")) extra += 400;
+  if (fullText.includes("。")) extra += 200;
+
+  const delay = base + fullText.length * perChar + extra;
+
+  autoTimer = setTimeout(() => {
+    nextBtn.click();
+  }, delay);
+
+}
+
+
+
+
 /* ========= 剧情数据 ========= */
 const script = [
   { text: "在自习室里，翻书的声音十分清脆。她走到了你旁边隔了一个位置。" },
-  // {show:"file:///C:/Users/zhouw/Downloads/0ec11eab-702e-4bc6-b47a-d49dd29729d3.png"},
+  // {show:"file:///C:/Users/zhouw/Downloads/games/%E6%97%AE%E6%97%AFgame/%E5%A5%B3%E4%B8%BB%E6%AD%A3%E5%B8%B8%E5%9D%90%E5%A7%BF.png"},
   { 
-    speaker: "她", text: "……这里，还有空位吗？" ,
-    show:"file:///C:/Users/zhouw/Downloads/0ec11eab-702e-4bc6-b47a-d49dd29729d3.png"
+    speaker: "她", text: "……可以坐这里吗？" ,
+    show:"file:///C:/Users/zhouw/Downloads/games/%E6%97%AE%E6%97%AFgame/%E5%A5%B3%E4%B8%BB%E6%AD%A3%E5%B8%B8%E5%9D%90%E5%A7%BF.png"
   },
   { speaker: "她", text: "如果不方便的话，我可以换个地方。" },
   {
@@ -187,6 +401,19 @@ const script = [
 
 //shｏｗ(); // 初始显示角色
 function showLine(line) {
+
+  // 记录对话历史
+  if (line.text) {
+  historyLog.push({
+    speaker: line.speaker || "",
+    text: line.text
+  });
+}
+
+
+  // 如果正在打字，直接显示完整句
+  clearTimeout(autoTimer);
+
   clearInterval(typingTimer);
 
   if (line.show) showHeroine(line.show);
@@ -211,10 +438,16 @@ function showLine(line) {
     textBox.textContent = fullText.slice(0, charIndex);
 
     if (charIndex >= fullText.length) {
-      clearInterval(typingTimer);
-      typing = false;
-    }
+  clearInterval(typingTimer);
+  typing = false;
+
+  if (autoMode) {
+    scheduleAuto();
+  }
+}
+
   }, typeSpeed);
+
 }
 
 
@@ -238,7 +471,7 @@ const branches = {
     //showc 角色
     { 
       speaker: "她", 
-      show: "file:///C:/Users/zhouw/Downloads/0ec11eab-702e-4bc6-b47a-d49dd29729d3.png",
+      show: "file:///C:/Users/zhouw/Downloads/games/%E6%97%AE%E6%97%AFgame/%E5%A5%B3%E4%B8%BB%E6%AD%A3%E5%B8%B8%E5%9D%90%E5%A7%BF.png",
       text: "……" 
     },
 
@@ -255,24 +488,26 @@ const branches = {
 
     { 
       speaker: "她", text: "……咦。",
-      show: "file:///C:/Users/zhouw/Downloads/0ec11eab-702e-4bc6-b47a-d49dd29729d3.png",
+      show: "file:///C:/Users/zhouw/Downloads/games/%E6%97%AE%E6%97%AFgame/%E5%A5%B3%E4%B8%BB%E6%AD%A3%E5%B8%B8%E5%9D%90%E5%A7%BF.png",
      },
 
     { speaker: "她", text: "刚才，这里是不是还有人？" },
 
 
     { choice: [
-      { text: "好像有。", jump: "A2" },
-      { text: "没注意。", jump: "A2" }
+      { text: "好像有。", hide: true, jump: "A2" },
+      { text: "没注意。", hide: true, jump: "A2" }
     ]}
   ],
 
     A2: [
-      { speaker: "她", text: "是吗。" },
+      { speaker: "她", text: "是吗。",
+        show: "file:///C:/Users/zhouw/Downloads/games/%E6%97%AE%E6%97%AFgame/%E5%A5%B3%E4%B8%BB%E6%AD%A3%E5%B8%B8%E5%9D%90%E5%A7%BF.png"
+       },
 
       { speaker: "她", text: "……可能是我记错了。" },
 
-      { text: "她低下头，继续看书。" },
+      { text: "她低下头，继续看着书。" ,hide: true},
 
       { text: "又过了一会儿。" },
 
@@ -284,12 +519,44 @@ const branches = {
 
       { text: "这一段时间，没有人再进来。" },
 
-// 后面某一章，她会说：
+      // 后面某一章，她会说：
 
-// 「你那天不是也觉得很安静吗？」
+      // 「你那天不是也觉得很安静吗？」
 
-// 玩家回忆这段时会发现：
-// 自己从没说过。
+      // 玩家回忆这段时会发现：
+      // 自己从没说过。
+
+      //尾声 学习室
+      { text: "自习室里只剩下零星的灯光。",
+          hide: true
+       },
+      { text: "窗外已经彻底暗了下来。" },
+
+      { speaker: "她", text: "……差不多了，又是度过了努力的一天呀。" ,
+        show: "file:///C:/Users/zhouw/Downloads/games/%E6%97%AE%E6%97%AFgame/%E5%A5%B3%E4%B8%BB%E6%AD%A3%E5%B8%B8%E5%9D%90%E5%A7%BF.png",
+      },
+      { text: "她合上书，把书页轻轻压平。" ,
+        hide: true
+      },
+
+      { speaker: "她", text: "你应该也看不进去了吧。" ,
+        show: "file:///C:/Users/zhouw/Downloads/games/%E6%97%AE%E6%97%AFgame/%E5%A5%B3%E4%B8%BB%E6%AD%A3%E5%B8%B8%E5%9D%90%E5%A7%BF.png"
+      },
+
+      // 跳转对话
+      { choice: [
+      { text: "嗯。", hide: true, jump: "A3" },
+      { text: "还好。", hide: true, jump: "A3" }
+    ]}
+    ],
+
+    A3: [
+      { speaker: "她", text: "那我们早点回去吧。" },
+      { text: "她站起来，收拾好东西。" },
+      { text: "你们一起离开了自习室。" },
+      { text: "外面的夜色已经很深了。" },
+      { speaker: "她", text: "晚安。" },
+      { text: "你也说了声晚安，然后各自回家了。" }
     ]
     
 
@@ -311,6 +578,13 @@ const choicesBox = document.getElementById("choices");
 
 // 显示选项
 function showChoices(choices) {
+
+  autoMode = false;
+  clearTimeout(autoTimer);
+  autoBtn.style.color = "#888";
+  autoBtn.style.animation = "none";
+
+
   nextBtn.style.display = "none";
   choicesBox.innerHTML = "";
   choices.forEach(c => {
@@ -348,6 +622,12 @@ nextBtn.onclick = () => {
   } else {
     showLine(line);
   }
+
+  // AUTO模式：如果开启了自动，在每句结束后自动点击下一句 
+  if (autoMode && !typing) {
+    scheduleAuto();
+  }
+
 };
 
 
